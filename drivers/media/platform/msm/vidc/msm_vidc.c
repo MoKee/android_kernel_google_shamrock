@@ -272,7 +272,7 @@ struct buffer_info *get_registered_buf(struct msm_vidc_inst *inst,
 				size, temp->buff_off[i])
 				|| OVERLAPS(buff_off, size,
 				temp->buff_off[i],
-				temp->size[i]))) {
+				temp->size[i])) && ion_hndl_matches) {
 					dprintk(VIDC_DBG,
 						"This memory region is already mapped\n");
 					ret = temp;
@@ -472,7 +472,7 @@ int map_and_register_buf(struct msm_vidc_inst *inst, struct v4l2_buffer *b)
 	int i = 0, rc = 0;
 	struct msm_smem *same_fd_handle = NULL;
 	bool check_same_fd_handle = !is_dynamic_output_buffer_mode(b, inst) &&
-		!(inst->session_type == MSM_VIDC_ENCODER &&
+		!( inst->session_type == MSM_VIDC_ENCODER &&
 			b->type == V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE);
 
 	if (!b || !inst) {
@@ -538,6 +538,7 @@ int map_and_register_buf(struct msm_vidc_inst *inst, struct v4l2_buffer *b)
 			goto exit;
 
 		if (check_same_fd_handle)
+		//if (!is_dynamic_output_buffer_mode(b, inst))
 			same_fd_handle = get_same_fd_buffer(
 						&inst->registeredbufs,
 						b->m.planes[i].reserved[0]);
@@ -1437,7 +1438,8 @@ static void cleanup_instance(struct msm_vidc_inst *inst)
 		debugfs_remove_recursive(inst->debugfs_root);
 
 		mutex_lock(&inst->pending_getpropq.lock);
-		WARN_ON(!list_empty(&inst->pending_getpropq.list));
+		WARN_ON(!list_empty(&inst->pending_getpropq.list)
+			&& (msm_vidc_debug & VIDC_INFO));
 		mutex_unlock(&inst->pending_getpropq.lock);
 	}
 }
